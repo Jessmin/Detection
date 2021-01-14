@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 from resnet50 import get_resnet
-
+from rpn import RegionProposalNetwork
 class FasterRCNN(nn.Module):
     def __init__(self, num_classes, mode='training', loc_normalize_mean=(0., 0., 0., 0.),
                  loc_normalize_std=(0.1, 0.1, 0.2, 0.2),
