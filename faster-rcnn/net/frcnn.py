@@ -7,13 +7,13 @@ import time
 import numpy as np
 import copy
 from PIL import Image, ImageFont, ImageDraw
-from utils.utils import DecodeBox
+from utils.utils import DecodeBox,get_new_img_size
 
 
 class FRCNN(nn.Module):
     _defaults = {
         "model_path": 'model_data/voc_weights_resnet.pth',
-        "classes_path": '../model_data/voc_classes.txt',
+        "classes_path": 'model_data/voc_classes.txt',
         "confidence": 0.5,
         "iou": 0.3,
         "backbone": "resnet50",
@@ -28,6 +28,7 @@ class FRCNN(nn.Module):
             return "Unrecognized attribute name '" + n + "'"
 
     def __init__(self, **kwargs):
+        super(FRCNN, self).__init__()
         self.__dict__.update(self._defaults)
         self.class_names = self._get_class()
         self.generate()
@@ -141,3 +142,16 @@ class FRCNN(nn.Module):
 
         print("time:", time.time() - start_time)
         return image
+
+
+def get_new_img_size(width, height, img_min_side=600):
+    if width <= height:
+        f = float(img_min_side) / width
+        resized_height = int(f * height)
+        resized_width = int(img_min_side)
+    else:
+        f = float(img_min_side) / height
+        resized_width = int(f * width)
+        resized_height = int(img_min_side)
+
+    return resized_width, resized_height

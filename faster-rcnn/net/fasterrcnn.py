@@ -2,6 +2,9 @@ import torch.nn as nn
 import torch
 from resnet50 import get_resnet
 from rpn import RegionProposalNetwork
+from classifier import Resnet50RoIHead
+
+
 class FasterRCNN(nn.Module):
     def __init__(self, num_classes, mode='training', loc_normalize_mean=(0., 0., 0., 0.),
                  loc_normalize_std=(0.1, 0.1, 0.2, 0.2),
@@ -19,5 +22,21 @@ class FasterRCNN(nn.Module):
             feat_stride=self.feat_stride,
             mode=mode
         )
+        self.head = Resnet50RoIHead(
+            n_class=num_classes + 1,
+            roi_size=14,
+            spatial_scale=(1. / self.feat_stride),
+            classifier=classifier
+        )
 
-        pass
+    def forward(self, x, scale=1.):
+        img_size = x.shape[2:]
+        h = self.extractor(x)
+        rpn_locs, rpn_scores, rois, roi_indices, anchor = self.rpn.forward(h, img_size, scale)
+        roi_cls_locs, roi_scores = self.head.forward(h, rois, roi_indices)
+        return roi_cls_locs, roi_scores, rois, roi_indices
+
+    def freeze_bn(self):
+        for m in self.modules():
+            if isinstance(m, nn.BatchNorm2d):
+                m.eval()
